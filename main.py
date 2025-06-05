@@ -19,7 +19,7 @@ fontSmall = ImageFont.truetype("fonts/latinmodern-math.otf", int(fontSize/2))
 shift = 5
 mathSights = ["+", "-", "/", "*", "=", "⋅", "·", "×", ":"]
 mathSightsMultiply = ["*", "⋅", "·"]
-eq_ = "y=(45^2+(((8)*2+(33/d-1))+66)/(2*(11 + (4:2)/2)*x - 99900))*8^(2+32/2)"
+eq_ = "y=(45^2+(((8)*2+(33/d-1))+66)/(2*(11 + (4:2)/2)*x - 99900))*8^(2+32:2)"
 # eq_= "(1/1+3/(2+1))*8"
 # eq_ = "2 + 3 ^ (4+8)"
 # eq_="(1)/2-1"
@@ -398,7 +398,7 @@ def doDraw (lR, liR, wiR, fR):
             # w += int(font.getlength(str(lR[a])))
 doDraw(l, li, wi, f)
 
-draw.text((10, 250), eq, font=font)
+# draw.text((10, 250), eq, font=font)
 
-# img.save("images/img.jpg")
+# img.save("images/img_2.jpg")
 img.show()
