@@ -8,20 +8,22 @@ height = 400
 
 img = Image.new(mode="RGB", size=(width, height))
 draw = ImageDraw.Draw(img)
-fontSize = 32
-# font = ImageFont.truetype("times.ttf", fontSize)
-# font = ImageFont.truetype("Asana-Math.otf", fontSize)
-font0 = ImageFont.truetype("fonts/latinmodern-math.otf", size=10)
+fontSize = 48
+
 font = ImageFont.truetype("fonts/latinmodern-math.otf", size=fontSize)
 font1 = ImageFont.truetype("fonts/latinmodern-math.otf", size=int(fontSize/1.5))
-fontSmall = ImageFont.truetype("fonts/latinmodern-math.otf", int(fontSize/2))
+font2 = ImageFont.truetype("fonts/latinmodern-math.otf", size=int(fontSize/2.2))
+font3 = ImageFont.truetype("fonts/latinmodern-math.otf", size=int(fontSize/3))
 
-shift = 5
+fonts = [font, font1, font2, font3]
+kof = [1, 1.5, 2.2, 3]
+
+shift = 5 # 1+(1+1)+1 --> 1+ (1+1) +1
 mathSights = ["+", "-", "/", "*", "=", "⋅", "·", "×", ":"]
 mathSightsMultiply = ["*", "⋅", "·"]
-eq_ = "y=(45^2+(((8)*2+(33/d-1))+66)/(2*(11 + (4:2)/2)*x - 99900))*8^(2+32:2)"
+eq_ = "y=(45^(2/22)+(((8)*2+(33/d-1))+66)/(2*(11 + (4:2^(2/2))/2)*x - 99900))*8^((23+1^(1^(1/1)/1))/2)))"
 # eq_= "(1/1+3/(2+1))*8"
-# eq_ = "2 + 3 ^ (4+8)"
+# eq_ = "2^(1+2/2) + 3 ^ (2/2)"
 # eq_="(1)/2-1"
 
 eq = ""
@@ -96,7 +98,7 @@ def plusMinus (li, n):
             li[a] += n
     return li
 
-def upReverseGo (l, li, wi):
+def upReverseGo (l, li, wi, power):
     n = -find_min(li)
     wiEd = wiGetLast(wi)
     for i in reversed(range(len(l))):
@@ -106,11 +108,11 @@ def upReverseGo (l, li, wi):
             li[i] = plusMinus(li[i], n+1)
             wiSt = wiGetFirst(wi[i])
         else:
-            li[i] += 1
+            li[i] += 1/kof[power]
             wiSt = wi[i][0]
     return l, li, [wiSt, wiEd]
 
-def downReverseGo (l, li, wi):
+def downReverseGo (l, li, wi, power):
     div = False
     last = wiGetLast(wi)
     for i in reversed(range(len(l))):
@@ -161,12 +163,13 @@ def downReverseGo (l, li, wi):
                     wi[i][1] += shift
 
                 add = (bottom - top) / 2 + shift
+                li[i] -= 1/kof[power]
 
             elif type(l[i]) == list:
                 li[i] = plusMinus(li[i], n-1)
                 wi[i] = plusMinus(wi[i], -sub + shift)
             else:
-                li[i] -= 1
+                li[i] -= 1/kof[power]
                 wi[i][0] -= sub - shift
                 if ch:
                     wi[i][1] -= top - shift*2
@@ -222,44 +225,6 @@ def bracketsInsert (l, li, wi, f):
 
     return l, li, wi, f
 
-def doPower (l, li, wi, f, start):
-    for i in range(len(l)):
-        if type(l[i]) == list:
-            if i == 0:
-                startIn = start
-            else:
-                startIn = wiGetLast(wi[:i])
-            li[i], wi[i], f[i] = doPower(l[i], li[i], wi[i], f[i], startIn)
-        else:
-            li[i] += 0.4
-            f[i] = 1
-            if i == 0:
-                wi[i][0] = start
-            else:
-                wi[i][0] = wi[i-1][1]
-            wi[i][1] = wi[i][0] + font1.getlength(l[i])
-
-    return li, wi, f
-
-def doPowerGo (l, li, wi, f):
-    for i in reversed(range(len(l))):
-        if l[i] == "^":
-            del l[i], li[i], wi[i], f[i]
-            j = i
-            break
-
-    for i in range(j, len(l)):
-        if type(l[i]) == list:
-            start = wiGetLast(wi[:i])
-            li[i], wi[i], f[i] = doPower(l[i], li[i], wi[i], f[i], start)
-        else:
-            li[i] += 0.4
-            f[i] = 1
-            wi[i][0] = wi[i-1][1]
-            wi[i][1] = wi[i][0] + font1.getlength(l[i])
-
-    return l, li, wi, f
-
 def wiGetLast (wi):
     if wi == []:
         return 0
@@ -297,15 +262,15 @@ def wiAppend (wi, length):
 bracketOpen = ["(", "{"]
 bracketClose = [")", "}"]
 
-def getPosition (q):
+def getPosition (q, pow = 0):
     l = []  # Characters list
     li = [] # Height position list
     wi = [] # Width position list
     f = []  # Fonts list (for different size)
+    power = 0
     i = 0
     mem = ""
     div = False
-    power = False
     bracket = 0
     while True:
         b = q[i]
@@ -318,7 +283,7 @@ def getPosition (q):
             mem += q[i]
         elif q[i] in bracketClose and bracket == 1:
             bracket = 0
-            l0, li0, wi0, f0 = getPosition(mem)
+            l0, li0, wi0, f0 = getPosition(mem, power+pow)
             if len(l) > 0 and l[-1] in mathSightsMultiply:
                 l0, li0, wi0, f0 = bracketsInsert(l0, li0, wi0, f0)
             wi0 = plusMinus(wi0, wiGetLast(wi))
@@ -330,38 +295,42 @@ def getPosition (q):
             # Get height (partly width)
             if q[i] == "/":
                 div = True
-                l, li, swi = upReverseGo(l, li, wi)
+                l, li, swi = upReverseGo(l, li, wi, power+pow)
             elif q[i] in mathSights and div:
                 div = False
-                l, li, wi = downReverseGo(l, li, wi)
+                l, li, wi = downReverseGo(l, li, wi, power+pow)
 
             if q[i] in mathSightsMultiply and len(l) > 0 and type(l[-1]) == list and (l[-1][-1] != ")" and l[-1][-1] != "⎠"):
                 l[-1], li[-1], wi[-1], f[-1] = bracketsInsert(l[-1], li[-1], wi[-1], f[-1])
 
             if q[i] == "^":
-                power = True
+                power += 1
+                i += 1
+                continue
             elif q[i] in mathSights and power:
-                power = False
-                l, li, wi, f = doPowerGo(l, li, wi, f)
+                power -= 1
 
+            if (power+pow) > 3:
+                pow = 3-power
             l.append(q[i])
-            li.append(0)
-            f.append(0)
+            # if q[i] == "/" and (power + pow) > 0:
+            #     li.append(0.6*kof[power+pow])
+            # else:
+            li.append(0.4*(power+pow))
+            f.append(power+pow)
 
             # Get width
             if q[i] == "/":
                 wi.append(swi)
             else:
-                symbolLength = int(font.getlength(q[i]))
+                symbolLength = int(fonts[power+pow].getlength(q[i]))
                 wi = wiAppend(wi, symbolLength)
 
 
         i += 1
         if i >= len(q):
             if div:
-                l, li, wi = downReverseGo(l, li, wi)
-            if power:
-                l, li, wi, f = doPowerGo(l, li, wi, f)
+                l, li, wi = downReverseGo(l, li, wi, power+pow)
             break
     return l, li, wi, f
 
@@ -383,16 +352,17 @@ def doDraw (lR, liR, wiR, fR):
         if type(liR[a]) == list:
             doDraw(lR[a], liR[a], wiR[a], fR[a])
         elif lR[a] == "/":
-            y = -liR[a]*fontSize/2 + m + fontSize/2
+            kR = kof[fR[a]]
+            y = -liR[a]*fontSize/2 + m
             draw.line((wiR[a][0], y, wiR[a][1], y), fill=(255,255,255))
         else:
-            fontUse = font0
-            if fR[a] == 0:
-                fontUse = font
-            elif fR[a] == 1:
-                fontUse = font1
-            else:
-                print("ERROR")
+            fontUse = fonts[fR[a]]
+            # if fR[a] == 0:
+            #     fontUse = font
+            # elif fR[a] == 1:
+            #     fontUse = font1
+            # else:
+            #     print("ERROR")
             draw.text((wiR[a][0], -liR[a]*fontSize/2 + m), lR[a], (255,255,255), font=fontUse)
             # draw.text((w, -liR[a]*25 + m), lR[a], (255,255,255), font=font)
             # w += int(font.getlength(str(lR[a])))
